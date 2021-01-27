@@ -6,8 +6,21 @@ bool pc_frame::init(pc_task& task, int t_num, int buf_size, int log_num)
     threadNum = t_num;
     bufSize = buf_size;
     logNum = log_num;
-    sem_init(&semPro, 0, 1);
-    sem_init(&semCon, 0, 0);
+#ifdef MAC
+    semPro = sem_open("a",O_CREAT, S_IRUSR | S_IWUSR, 0);
+    if(semPro == NULL){
+        cerr<<"init semPro error:"<<errno<<endl;
+    }
+    sem_post(semPro);
+    semCon = sem_open("b",O_CREAT, S_IRUSR | S_IWUSR, 0);
+    if(semCon == NULL){
+        cerr<<"init semCon error:"<<errno<<endl;
+    }
+#else
+    sem_init(semPro, 0, 1);
+    sem_init(semCon, 0, 0);
+    cout<<"Linux...."<<endl;
+#endif
     threadVec.clear();
     threadVec.push_back(thread(&pc_frame::pro_thread, this));
     for(int i = 0; i < threadNum; ++i)
@@ -35,7 +48,7 @@ void pc_frame::pro_thread()
     bool finished_flag = false;
     while(true)
     {
-        sem_wait(&semPro);
+        sem_wait(semPro);
         bufMtx.lock();
         for(i = 0; i < bufSize; ++i)
         {
@@ -52,7 +65,7 @@ void pc_frame::pro_thread()
             }
         }
         bufMtx.unlock();
-        sem_post(&semCon);
+        sem_post(semCon);
         if(finished_flag)
         {
             break;
@@ -69,7 +82,7 @@ void pc_frame::con_thread()
     while(true)
     {
         input_vec.clear();
-        sem_wait(&semCon);
+        sem_wait(semCon);
         bufMtx.lock();
         for(int i = 0; i < bufSize; ++i)
         {
@@ -82,10 +95,10 @@ void pc_frame::con_thread()
             buffer.pop();
         }
         bufMtx.unlock();
-        sem_post(&semPro);
+        sem_post(semPro);
         pTask->run_task(input_vec);
         if(finished_flag) break;
     }
-    sem_post(&semCon);
+    sem_post(semCon);
 }
 

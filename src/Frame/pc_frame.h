@@ -18,14 +18,15 @@ class pc_frame
 {
 public:
     pc_frame(){}
-    bool init(pc_task& task, int t_num, int buf_size = 5000, int log_num = 200000);
+    bool init(pc_task& task, int t_num, int buf_size = 5000, int log_num = 20000);
     void run();
 
 private:
     int threadNum;
     pc_task* pTask;
     mutex bufMtx;
-    sem_t semPro, semCon;
+    sem_t* semPro;
+    sem_t* semCon;
     queue<string> buffer;
     vector<thread> threadVec;
     int bufSize;

@@ -34,6 +34,16 @@ private:
     static int factor_num;
 
 public:
+    /**
+     * struct _Hash_node                   // 32 bytes
+        {
+            _Hash_node_base* _M_bucket;        // 8 bytes
+            const char* Key;                // 8 bytes
+            ftrl_model_unit<float> Value;   // 4*3 bytes = 12 bytes
+            char padding[4];                // 4 bytes
+        };
+        _M_bucket对应的指针数组内存stl管理，指针所指的内容由内存池管理
+     * */
     static void static_init(int _factor_num)
     {
         factor_num = _factor_num;

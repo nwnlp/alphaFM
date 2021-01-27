@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include "mem_pool.h"
 //#include <ext/pool_allocator.h>
 
 using namespace std;

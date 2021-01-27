@@ -30,6 +30,8 @@ int predict(const predictor_option& opt)
     pc_frame frame;
     frame.init(predictor, opt.threads_num);
     frame.run();
+    cout<<"auc:"<<predictor.auc()<< endl;
+    cout<<"logloss:"<<predictor.log_loss()<< endl;
     return 0;
 }
 

@@ -4,7 +4,7 @@
 #include "../Frame/pc_frame.h"
 #include "predict_model.h"
 #include "../Sample/fm_sample.h"
-
+#include "../Metrics/auc.h"
 
 struct predictor_option
 {
@@ -74,10 +74,12 @@ public:
     ftrl_predictor(const predictor_option& opt);
     ~ftrl_predictor();
     virtual void run_task(vector<string>& dataBuffer);
-    
+    double auc();
+    double log_loss();
 private:
     predict_model<T>* pModel;
     ofstream fPredict;
+    vector<label_score> vecLabelScore;
     mutex outMtx;
 };
 
@@ -112,20 +114,31 @@ ftrl_predictor<T>::~ftrl_predictor()
 template<typename T>
 void ftrl_predictor<T>::run_task(vector<string>& dataBuffer)
 {
-    vector<string> outputVec(dataBuffer.size());
+    vector<label_score> labelScore;
     for(size_t i = 0; i < dataBuffer.size(); ++i)
     {
         fm_sample sample(dataBuffer[i]);
         double score = pModel->get_score(sample.x, pModel->muBias->wi, pModel->muMap);
-        outputVec[i] = to_string(sample.y) + " " + to_string(score);
+        label_score ls(sample.y, score);
+        labelScore.push_back(ls);
     }
     outMtx.lock();
-    for(size_t i = 0; i < outputVec.size(); ++i)
+    for(size_t i = 0; i < labelScore.size(); ++i)
     {
-        fPredict << outputVec[i] << endl;
+        fPredict << to_string(labelScore[i].label) + " " + to_string(labelScore[i].score) << endl;
     }
+    vecLabelScore.insert(vecLabelScore.end(), labelScore.begin(), labelScore.end());
     outMtx.unlock();
 }
 
+template<typename T>
+double ftrl_predictor<T>::auc(){
+    return calc_auc(vecLabelScore);
+}
+
+template<typename T>
+double ftrl_predictor<T>::log_loss(){
+    return calc_log_loss(vecLabelScore);
+}
 
 #endif /*FTRL_PREDICTOR_H_*/
